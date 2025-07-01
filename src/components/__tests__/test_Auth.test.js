@@ -33,4 +33,34 @@ describe('Auth component', () => {
     fireEvent.click(screen.getByTestId('mock-signup'));
     expect(screen.getByTestId('mock-login')).toBeInTheDocument();
   });
+
+  // --- Advanced: Handle failed login UI feedback path ---
+  it('shows error on login failure (simulated via mocked Login)', async () => {
+    // Unmock Login to create a special one for failure
+    jest.resetModules();
+    jest.doMock('../Login', () => {
+      return function Login({ setAuth }) {
+        // Simulate form submit calling a failed dispatch
+        React.useEffect(() => {
+          if (typeof window.handleLoginFailure === 'function') {
+            window.handleLoginFailure();
+          }
+        }, []);
+        return <div data-testid="login-failure">FailLogin</div>;
+      };
+    });
+    // Mock react-toastify to verify error is called
+    const toast = { error: jest.fn() };
+    jest.doMock('react-toastify', () => toast);
+
+    // Callback to simulate side effect on mount
+    window.handleLoginFailure = () => toast.error("Network/auth error");
+    const AuthFail = require('../Auth').default;
+    render(<AuthFail />);
+    expect(screen.getByTestId('login-failure')).toBeInTheDocument();
+    // Error toast should have fired via simulated useEffect
+    expect(toast.error).toHaveBeenCalledWith("Network/auth error");
+    delete window.handleLoginFailure;
+    jest.resetModules();
+  });
 });

@@ -99,6 +99,17 @@ describe("user reducer advanced/edge logic", () => {
     expect(result.data.channels[0].id).toBe(55);
   });
 
+  it("handles addChannel with channels null or undefined", () => {
+    // null channels
+    const resultNull = userReducer({ data: { channels: null } }, addChannel({ id: 42 }));
+    expect(Array.isArray(resultNull.data.channels)).toBe(true);
+    expect(resultNull.data.channels[0].id).toBe(42);
+    // undefined channels
+    const resultUnd = userReducer({ data: {} }, addChannel({ id: 42 }));
+    expect(Array.isArray(resultUnd.data.channels)).toBe(true);
+    expect(resultUnd.data.channels[0].id).toBe(42);
+  });
+
   it("can handle removeChannel if channels is missing/empty", () => {
     // Try with undefined channels
     const result1 = userReducer({ data: {} }, removeChannel(1));
@@ -106,6 +117,9 @@ describe("user reducer advanced/edge logic", () => {
     // Try with empty array
     const result2 = userReducer({ data: { channels: [] } }, removeChannel(42));
     expect(result2.data.channels).toEqual([]);
+    // Try with null
+    const result3 = userReducer({ data: { channels: null } }, removeChannel(42));
+    expect(Array.isArray(result3.data.channels)).toBe(true);
   });
 
   it("updateUser merges over empty and missing objects", () => {
@@ -120,5 +134,11 @@ describe("user reducer advanced/edge logic", () => {
     const prev = { data: { foo: 123 } };
     const next = userReducer(prev, { type: "something/else", payload: 10 });
     expect(next).toEqual(prev);
+    // Also check with an action object missing type
+    const resultNoType = userReducer(prev, {});
+    expect(resultNoType).toEqual(prev);
+    // Check with totally empty action
+    const resultEmpty = userReducer(prev, undefined);
+    expect(resultEmpty).toEqual(prev);
   });
 });
